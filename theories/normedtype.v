@@ -1718,6 +1718,12 @@ Variables (R : numDomainType) (V : normedModType R).
 Lemma normmZ l (x : V) : `| l *: x | = `| l | * `| x |.
 Proof. by case: V x => V0 [a b [c]] //= v; rewrite c. Qed.
 
+
+End NormedModule_numDomainType.
+
+Section PseudoNormedZmod_numDomainType. (*to be lifted *)
+Variables (R : numDomainType) (V : pseudoMetricNormedZmodType R).
+  
 Local Notation ball_norm := (ball_ (@normr R V)).
 
 Local Notation locally_norm := (locally_ ball_norm).
@@ -1789,7 +1795,7 @@ Proof. by move=> /cvg_distP. Qed.
 Lemma locally_norm_ball x (eps : {posnum R}) : locally_norm x (ball x eps%:num).
 Proof. rewrite locally_locally_norm; by apply: locally_ball. Qed.
 
-End NormedModule_numDomainType.
+End PseudoNormedZmod_numDomainType.
 Hint Resolve normr_ge0 : core.
 Arguments cvg_dist {_ _ F FF}.
 
@@ -1977,9 +1983,9 @@ Lemma lipschitz_id (R : numFieldType) (V : normedModType R) : 1.-lipschitz (@id 
 Proof. by move=> [/= x y] _; rewrite mul1r. Qed.
 Arguments lipschitz_id {R V}.
 
-Section NormedModule_numFieldType.
-Variables (R : numFieldType) (V : normedModType R).
-Implicit Types (x y z : V).
+(* Section NormedModule_numFieldType. *)
+Section PseudoNormedZMod_numFieldType.
+Variables (R : numFieldType) (V : pseudoMetricNormedZmodType R).
 
 Local Notation ball_norm := (ball_ (@normr R V)).
 
@@ -2002,17 +2008,17 @@ Hint Extern 0 (hausdorff _) => solve[apply: norm_hausdorff] : core.
 (*       i.e. where the generic lemma is applied, *)
 (*            check that norm_hausdorff is not used in a hard way *)
 
-Lemma norm_closeE x y : close x y = (x = y). Proof. exact: closeE. Qed.
-Lemma norm_close_eq x y : close x y -> x = y. Proof. exact: close_eq. Qed.
+Lemma norm_closeE (x y : V): close x y = (x = y). Proof. exact: closeE. Qed.
+Lemma norm_close_eq (x y : V) : close x y -> x = y. Proof. exact: close_eq. Qed.
 
 Lemma norm_cvg_unique {F} {FF : ProperFilter F} : is_subset1 [set x : V | F --> x].
 Proof. exact: cvg_unique. Qed.
 
-Lemma norm_cvg_eq x y : x --> y -> x = y. Proof. exact: cvg_eq. Qed.
-Lemma norm_lim_id x : lim x = x. Proof. exact: lim_id. Qed.
+Lemma norm_cvg_eq (x y : V) : x --> y -> x = y. Proof. exact: (@cvg_eq V). Qed.
+Lemma norm_lim_id x : [lim x in V](*NB: was lim x*) = x. Proof. exact: lim_id. Qed.
 
-Lemma norm_cvg_lim {F} {FF : ProperFilter F} (l : V) : F --> l -> lim F = l.
-Proof. exact: cvg_lim. Qed.
+Lemma norm_cvg_lim {F} {FF : ProperFilter F} (l : V) : F --> l -> [lim F in V](*NB: was lim F*) = l.
+Proof. exact: (@cvg_lim V). Qed.
 
 Lemma norm_lim_near_cst U {F} {FF : ProperFilter F} (l : V) (f : U -> V) :
    (\forall x \near F, f x = l) -> lim (f @ F) = l.
@@ -2063,13 +2069,30 @@ move=> cv; apply/cvg_distP => _/posnumP[e]; near=> x.
 by apply: normm_leW => //; near: x; apply: cv.
 Grab Existential Variables. all: end_near. Qed.
 
-Lemma cvg_bounded {F : set (set V)} {FF : Filter F} (y : V) :
-  F --> y -> bounded_on id F.
+End PseudoNormedZMod_numFieldType.
+
+Section NormedModule_numFieldType.
+Variables (R : numFieldType) (V : normedModType R).
+
+Lemma cvg_bounded_real {F : set (set V)} {FF : Filter F} (y : V) :
+  F --> y ->
+  \forall M \near +oo, M \is Num.real /\ \forall y' \near F, `|y'| < M.
 Proof.
-move=> /cvg_dist Fy; exists `|y|; rewrite normr_real; split => //= M.
-rewrite -subr_gt0 => /Fy; apply: filterS => y' yy'; apply: ltW.
-by rewrite -(@ltr_add2r _ (- `|y|)) (le_lt_trans (ler_sub_dist _ _))// distrC.
+move=> /cvg_dist Fy; exists `|y|; rewrite normr_real; split => // M.
+rewrite -subr_gt0 => subM_gt0; split.
+  rewrite -comparabler0 (@comparabler_trans _ (M - `|y|)) //.
+    by rewrite -subr_comparable0 opprD addrA subrr add0r opprK comparabler0
+      normr_real.
+  by rewrite comparablerE subr0 realE ltW.
+have := Fy _ subM_gt0.
+apply: filterS => y' yy'; rewrite -(@ltr_add2r _ (- `|y|)).
+rewrite (le_lt_trans _ yy') // (le_trans _ (ler_dist_dist _ _)) // distrC.
+by rewrite real_ler_norm // realB.
 Qed.
+
+Lemma cvg_bounded {F : set (set V)} {FF : Filter F} (y : V) :
+  F --> y -> \forall M \near +oo, \forall y' \near F, `|y'| < M.
+Proof. move/cvg_bounded_real; by apply: filterS => x []. Qed.
 
 End NormedModule_numFieldType.
 Arguments cvg_bounded {_ _ F FF}.
@@ -2080,6 +2103,7 @@ Definition locally_simpl :=
   (locally_simpl,@locally_locally_norm,@filter_from_norm_locally).
 End LocallyNorm.
 
+(* TODO: generalize to R : numFieldType *)
 Section hausdorff.
 
 Lemma Rhausdorff (R : realFieldType) : hausdorff [topologicalType of R^o].
@@ -2093,6 +2117,25 @@ rewrite -(subrKA z) (le_trans (ler_norm_add _ _) _)// ltW //.
 by rewrite (splitr e%:num) (distrC z); apply: ltr_add.
 Qed.
 
+Lemma pseudoMetricNormedZModType_hausdorff (R : realFieldType) (V : pseudoMetricNormedZmodType R) :
+  hausdorff V.
+Proof.
+move=> p q clp_q; apply/subr0_eq/normr0_eq0/Rhausdorff => A B pq_A.
+rewrite -(@normr0 _ V) -(subrr p) => pp_B.
+suff loc_preim r C : @locally _ [filteredType R of R^o] `|p - r| C ->
+    locally r ((fun r => `|p - r|) @^-1` C).
+  have [r []] := clp_q _ _ (loc_preim _ _ pp_B) (loc_preim _ _ pq_A).
+  by exists `|p - r|.
+move=> [e egt0 pre_C]; apply: locally_le_locally_norm; exists e => // s re_s.
+apply: pre_C; apply: le_lt_trans (ler_dist_dist _ _) _.
+by rewrite opprB addrC -subr_trans distrC.
+Qed.
+
+(* maybe not useful *)
+Lemma normedModType_hausdorff' (R : realFieldType) (V : normedModType R) :
+  hausdorff V.
+Proof. exact: norm_hausdorff. Qed.
+
 End hausdorff.
 
 Module Export NearNorm.
@@ -2102,13 +2145,13 @@ Ltac near_simpl := rewrite ?near_simpl.
 End NearNorm.
 
 Lemma continuous_cvg_dist {R : numFieldType}
-  (V W : normedModType R) (f : V -> W) x l :
+  (V W : pseudoMetricNormedZmodType R) (f : V -> W) x l :
   continuous f -> x --> l -> forall e : {posnum R}, `|f l - f x| < e%:num.
 Proof.
 move=> cf xl e.
 move/cvg_dist: (cf l) => /(_ _ (posnum_gt0 e)).
 rewrite nearE /= => /locallyP; rewrite locally_E => -[i i0]; apply.
-have /@cvg_dist : Filter [filter of x] by apply: filter_on_Filter.
+have /@cvg_dist : Filter [filter of x] by apply: (@filter_on_Filter V).
 move/(_ _ xl _ i0).
 rewrite nearE /= => /locallyP; rewrite locally_E => -[j j0].
 by move/(_ _ (ballxx _ j0)); rewrite -ball_normE.
@@ -2736,6 +2779,15 @@ Canonical AbsRing_NormedModType (K : absRingType) :=
   NormedModType K K^o (AbsRing_NormedModMixin _).*)
 
 (** Normed vector spaces have some continuous functions *)
+ (** that are in fact continuous on Pseudometricnormedzmodtype  *)
+
+Lemma add_continuous {K : numFieldType} {V : pseudoMetricNormedZmodType K} :
+  continuous (fun z : V * V => z.1 + z.2).
+Proof.
+move=> [/=x y]; apply/cvg_distP=> _/posnumP[e].
+rewrite !near_simpl /=; near=> a b => /=; rewrite opprD addrACA.
+by rewrite normm_lt_split //; [near: a|near: b]; apply: cvg_dist.
+Grab Existential Variables. all: end_near. Qed.
 
 (* kludge *)
 Global Instance filter_locally (K' : numFieldType) (k : K'^o) :
@@ -2748,27 +2800,25 @@ Section NVS_continuity_normedModType.
 Context {K : numFieldType} {V : normedModType K}.
 Local Notation "'+oo'" := (pinfty_locally K).
 
-Lemma add_continuous : continuous (fun z : V * V => z.1 + z.2).
-Proof.
-move=> [/=x y]; apply/cvg_distP=> _/posnumP[e].
-rewrite !near_simpl /=; near=> a b => /=; rewrite opprD addrACA.
-by rewrite normm_lt_split //; [near: a|near: b]; apply: cvg_dist.
-Grab Existential Variables. all: end_near. Qed.
+Lemma add_continuous' : continuous (fun z : V * V => z.1 + z.2).
+Proof. exact: add_continuous. Qed.
 
 Lemma scale_continuous : continuous (fun z : K^o * V => z.1 *: z.2).
 Proof.
 move=> [k x]; apply/cvg_distP=> _/posnumP[e].
-rewrite !near_simpl /=; near +oo => M.
-have M_gt0 : M > 0 by near: M; apply: locally_pinfty_gt_real; rewrite real0.
-near=> l z => /=.
+rewrite !near_simpl /=; near +oo => M; near=> l z => /=.
 rewrite (@distm_lt_split _ _ (k *: z)) // -?(scalerBr, scalerBl) normmZ.
-  suff: (`|k| + 1) * `|x - z| < e%:num / 2.
-    by apply: le_lt_trans; rewrite ler_pmul// ler_addl.
+  rewrite (le_lt_trans (ler_pmul _ _ (_ : _ <= `|k| + 1) (lexx _))) //.
+  by rewrite ler_addl.
   rewrite -ltr_pdivl_mull // ?(lt_le_trans ltr01) ?ler_addr //; near: z.
   by apply: cvg_dist; rewrite // mulr_gt0 // ?invr_gt0 ltr_paddl.
-have zM : `|z| <= M by near: z; near: M; apply:cvg_bounded; apply: cvg_refl.
-rewrite (le_lt_trans (ler_pmul _ _ (lexx _) zM)) // ?ltW // -ltr_pdivl_mulr//.
-by near: l; apply: (cvg_dist (_ : K^o)); rewrite // mulr_gt0// invr_gt0.
+have zM : @normr _ V z < M.
+  by near: z; near: M; apply: cvg_bounded; apply: cvg_refl.
+rewrite (le_lt_trans (ler_pmul _ _ (lexx _) (_ : _ <= M))) // ?ltW //.
+rewrite -ltr_pdivl_mulr ?(le_lt_trans _ zM) //.
+near: l; apply: (cvg_dist (_ : K^o)) => //.
+by rewrite divr_gt0 //; near: M; exists 0; rewrite real0.
+(* NB: the last three lines used to be one *)
 Grab Existential Variables. all: end_near. Qed.
 
 Arguments scale_continuous _ _ : clear implicits.
@@ -2783,7 +2833,7 @@ Proof.
 by move=> k; apply: (cvg_comp2 cvg_id (cvg_cst _) (scale_continuous (_, _))).
 Qed.
 
-Lemma opp_continuous : continuous (@GRing.opp V).
+Lemma opp_continuous : continuous (@GRing.opp V). (*TODO: generalize to pseudometricnormedzmod*)
 Proof.
 move=> x; rewrite -scaleN1r => P /scaler_continuous /=.
 by rewrite !locally_nearE near_map; apply: filterS => x'; rewrite scaleN1r.
@@ -2945,7 +2995,7 @@ Proof. by move=> /cvgV cvf /cvf /cvgP. Qed.
 
 End cvg_composition_field.
 
-Section limit_composition.
+Section limit_composition_normedmod.
 
 Context {K : numFieldType} {V : normedModType K} {T : topologicalType}.
 Context (F : set (set T)) {FF : ProperFilter F}.
@@ -2976,7 +3026,7 @@ Proof. by move=> ?; apply: cvg_lim => //; apply: cvgZr. Qed.
 Lemma lim_norm f : cvg (f @ F) -> lim ((fun x => `|f x| : K^o) @ F) = `|lim (f @ F)|.
 Proof. by move=> ?; apply: (@cvg_lim [topologicalType of K^o]) => //; apply: cvg_norm. Qed.
 
-End limit_composition.
+End limit_composition_normedmod.
 
 Section limit_composition_field.
 

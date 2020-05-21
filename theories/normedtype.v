@@ -2802,9 +2802,6 @@ Section NVS_continuity_normedModType.
 Context {K : numFieldType} {V : normedModType K}.
 Local Notation "'+oo'" := (pinfty_locally K).
 
-Lemma add_continuous' : continuous (fun z : V * V => z.1 + z.2).
-Proof. exact: add_continuous. Qed.
-
 Lemma scale_continuous : continuous (fun z : K^o * V => z.1 *: z.2).
 Proof.
 move=> [k x]; apply/cvg_distP=> _/posnumP[e].

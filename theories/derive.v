@@ -779,7 +779,7 @@ apply/eqoP=> _ /posnumP[e]; near=> x; rewrite (le_trans (fschwarz _ _))//.
 rewrite ler_pmul ?pmulr_rge0 //; last by rewrite nng_le_maxr /= lexx orbT.
 rewrite -ler_pdivl_mull //.
 suff : `|x| <= k%:num ^-1 * e%:num by apply: le_trans; rewrite nng_le_maxr /= lexx.
-near: x; rewrite !near_simpl; apply/locally_le_locally_norm.
+near: x; rewrite !near_simpl; apply/(@locally_le_locally_norm _ [pseudoMetricNormedZmodType R of _]).
 by exists (k%:num ^-1 * e%:num) => // ? /=; rewrite distrC subr0 => /ltW.
 Grab Existential Variables. all: end_near. Qed.
 
@@ -931,7 +931,7 @@ rewrite -[X in X + _]mulr1 -[X in 1 / _ * X](@mulfVK _ (x ^+ 2)); last first.
   by rewrite sqrf_eq0.
 rewrite mulrA mulf_div mulr1.
 have hDx_neq0 : h + x != 0.
-  near: h; rewrite !locally_simpl; apply/locally_normP.
+  near: h; rewrite !locally_simpl; apply/(@locally_normP _ [pseudoMetricNormedZmodType R of _]).
   exists `|x|; first by rewrite normr_gt0.
   move=> h /=; rewrite distrC subr0 -subr_gt0 => lthx.
   rewrite -(normr_gt0 (h + x : R^o)) addrC -[h]opprK.

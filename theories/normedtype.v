@@ -1718,12 +1718,11 @@ Variables (R : numDomainType) (V : normedModType R).
 Lemma normmZ l (x : V) : `| l *: x | = `| l | * `| x |.
 Proof. by case: V x => V0 [a b [c]] //= v; rewrite c. Qed.
 
-
 End NormedModule_numDomainType.
 
 Section PseudoNormedZmod_numDomainType. (*to be lifted *)
 Variables (R : numDomainType) (V : pseudoMetricNormedZmodType R).
-  
+
 Local Notation ball_norm := (ball_ (@normr R V)).
 
 Local Notation locally_norm := (locally_ ball_norm).
@@ -1752,12 +1751,11 @@ Lemma filter_from_norm_locally x :
   @filter_from R _ [set x : R | 0 < x] (ball_norm x) = locally x.
 Proof. by rewrite -locally_locally_norm. Qed.
 
-Lemma locally_normE (x : V) (P : set V) :
-  locally_norm x P = \near x, P x.
+Lemma locally_normE (x : V) (P : set V) : locally_norm x P = \near x, P x.
 Proof. by rewrite locally_locally_norm near_simpl. Qed.
 
 Lemma filter_from_normE (x : V) (P : set V) :
-  @filter_from R _ [set x : R | 0 < x] (ball_norm x) P = \near x, P x.
+  filter_from [set x : R | 0 < x] (ball_norm x) P = \near x, P x.
 Proof. by rewrite filter_from_norm_locally. Qed.
 
 Lemma near_locally_norm (x : V) (P : set V) :
@@ -1818,7 +1816,7 @@ Definition fun1 {T : Type} {K : numFieldType} :
   T -> [normedModType K of K^o] := fun=> 1.
 Arguments fun1 {T K} x /.
 
-Definition dominated_by {T : Type} {K : numDomainType} {V W : normedModType K}
+Definition dominated_by {T : Type} {K : numDomainType} {V W : pseudoMetricNormedZmodType K}
   (h : T -> V) (k : K) (f : T -> W) (F : set (set T)) :=
   F [set x | `|f x| <= k * `|h x|].
 
@@ -1837,7 +1835,7 @@ Lemma sub_dominatedr (T : Type) (K : numFieldType) (V : normedModType K)
    dominated_by h k g F -> dominated_by h k f F.
 Proof. by move=> le_fg; apply: filterS2 le_fg => x; apply: le_trans. Qed.
 
-Lemma dominated_by1 {T : Type} {K : numFieldType} {V : normedModType K} :
+Lemma dominated_by1 {T : Type} {K : numFieldType} {V : pseudoMetricNormedZmodType K} :
   @dominated_by T K _ V fun1 = fun k f F => F [set x | `|f x| <= k].
 Proof.
 rewrite funeq3E => k f F.
@@ -1851,7 +1849,7 @@ rewrite funeq3E => k f F.
 by congr F; rewrite funeqE => x; rewrite normr1 mulr1.
 Qed.
 
-Lemma ex_dom_bound {T : Type} {K : numFieldType} {V W : normedModType K}
+Lemma ex_dom_bound {T : Type} {K : numFieldType} {V W : pseudoMetricNormedZmodType K}
     (h : T -> V) (f : T -> W) (F : set (set T)) {PF : ProperFilter F}:
   (\forall M \near +oo, dominated_by h M f F) <->
   exists M, dominated_by h M f F.
@@ -1881,11 +1879,11 @@ exists (M + 1); apply: filterS2 hN0 FM => x hN0 /le_lt_trans->//.
 by rewrite ltr_pmul2r ?normr_gt0// ltr_addl.
 Qed.
 
-Definition bounded_on {T : Type} {K : numFieldType} {V : normedModType K}
+Definition bounded_on {T : Type} {K : numFieldType} {V : pseudoMetricNormedZmodType K}
   (f : T -> V) (F : set (set T)) :=
   \forall M \near +oo, F [set x | `|f x| <= M].
 
-Lemma boundedE {T : Type} {K : numFieldType} {V : normedModType K} :
+Lemma boundedE {T : Type} {K : numFieldType} {V : pseudoMetricNormedZmodType K} :
   @bounded_on T K V = fun f F => \forall M \near +oo, dominated_by fun1 M f F.
 Proof. by rewrite dominated_by1. Qed.
 
@@ -1902,7 +1900,7 @@ move=> le_fg; rewrite /bounded_on; apply: filterS => M.
 by apply: filterS2 le_fg => x; apply: le_trans.
 Qed.
 
-Lemma ex_bound {T : Type} {K : numFieldType} {V : normedModType K}
+Lemma ex_bound {T : Type} {K : numFieldType} {V : pseudoMetricNormedZmodType K}
   (f : T -> V) (F : set (set T)) {PF : ProperFilter F}:
   bounded_on f F <-> exists M, F [set x | `|f x| <= M].
 Proof. by rewrite boundedE ex_dom_bound dominated_by1. Qed.
@@ -1983,7 +1981,7 @@ Lemma lipschitz_id (R : numFieldType) (V : normedModType R) : 1.-lipschitz (@id 
 Proof. by move=> [/= x y] _; rewrite mul1r. Qed.
 Arguments lipschitz_id {R V}.
 
-(* Section NormedModule_numFieldType. *)
+(* was Section NormedModule_numFieldType. *)
 Section PseudoNormedZMod_numFieldType.
 Variables (R : numFieldType) (V : pseudoMetricNormedZmodType R).
 
@@ -2091,8 +2089,12 @@ by rewrite real_ler_norm // realB.
 Qed.
 
 Lemma cvg_bounded {F : set (set V)} {FF : Filter F} (y : V) :
-  F --> y -> \forall M \near +oo, \forall y' \near F, `|y'| < M.
-Proof. move/cvg_bounded_real; by apply: filterS => x []. Qed.
+  F --> y -> bounded_on id F.
+Proof.
+move=> /cvg_dist Fy; exists `|y|; rewrite normr_real; split => //= M.
+rewrite -subr_gt0 => /Fy; apply: filterS => y' yy'; apply: ltW.
+by rewrite -(@ltr_add2r _ (- `|y|)) (le_lt_trans (ler_sub_dist _ _))// distrC.
+Qed.
 
 End NormedModule_numFieldType.
 Arguments cvg_bounded {_ _ F FF}.
@@ -2128,7 +2130,7 @@ suff loc_preim r C : @locally _ [filteredType R of R^o] `|p - r| C ->
   by exists `|p - r|.
 move=> [e egt0 pre_C]; apply: locally_le_locally_norm; exists e => // s re_s.
 apply: pre_C; apply: le_lt_trans (ler_dist_dist _ _) _.
-by rewrite opprB addrC -subr_trans distrC.
+by rewrite opprB addrC subrKA distrC.
 Qed.
 
 (* maybe not useful *)
@@ -2806,19 +2808,17 @@ Proof. exact: add_continuous. Qed.
 Lemma scale_continuous : continuous (fun z : K^o * V => z.1 *: z.2).
 Proof.
 move=> [k x]; apply/cvg_distP=> _/posnumP[e].
-rewrite !near_simpl /=; near +oo => M; near=> l z => /=.
+rewrite !near_simpl /=; near +oo => M.
+have M_gt0 : M > 0 by near: M; apply: locally_pinfty_gt_real; rewrite real0.
+near=> l z => /=.
 rewrite (@distm_lt_split _ _ (k *: z)) // -?(scalerBr, scalerBl) normmZ.
-  rewrite (le_lt_trans (ler_pmul _ _ (_ : _ <= `|k| + 1) (lexx _))) //.
-  by rewrite ler_addl.
+  suff: (`|k| + 1) * `|x - z| < e%:num / 2.
+    by apply: le_lt_trans; rewrite ler_pmul// ler_addl.
   rewrite -ltr_pdivl_mull // ?(lt_le_trans ltr01) ?ler_addr //; near: z.
   by apply: cvg_dist; rewrite // mulr_gt0 // ?invr_gt0 ltr_paddl.
-have zM : @normr _ V z < M.
-  by near: z; near: M; apply: cvg_bounded; apply: cvg_refl.
-rewrite (le_lt_trans (ler_pmul _ _ (lexx _) (_ : _ <= M))) // ?ltW //.
-rewrite -ltr_pdivl_mulr ?(le_lt_trans _ zM) //.
-near: l; apply: (cvg_dist (_ : K^o)) => //.
-by rewrite divr_gt0 //; near: M; exists 0; rewrite real0.
-(* NB: the last three lines used to be one *)
+have zM : `|z| <= M by near: z; near: M; apply:cvg_bounded; apply: cvg_refl.
+rewrite (le_lt_trans (ler_pmul _ _ (lexx _) zM)) // ?ltW // -ltr_pdivl_mulr//.
+by near: l; apply: (cvg_dist (_ : K^o)); rewrite // mulr_gt0// invr_gt0.
 Grab Existential Variables. all: end_near. Qed.
 
 Arguments scale_continuous _ _ : clear implicits.

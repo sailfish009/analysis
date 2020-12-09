@@ -162,7 +162,7 @@ Proof.
 move=> x0; rewrite /series; near \oo => N.
 have xN : x < N%:R.
   near: N.
-  exists (absz (ifloor x)).+1 => // m; rewrite -(@ler_nat R) => xm.
+  exists (absz (ifloor x)).+1 => // m; rewrite /mkset -(@ler_nat R) => xm.
   rewrite {xm}(lt_le_trans _ xm) // (lt_le_trans (floorS_gtr x)) //.
   rewrite -addn1 natrD (_ : 1%:R = 1%R) // ler_add2r floorE.
   by rewrite -(@gez0_abs (ifloor x)) // ifloor_ge0 // ltW.
@@ -181,13 +181,18 @@ Qed.
 Lemma exp_cvg_series x : cvg (series (exp_ x)).
 Proof.
 have [/eqP ->|x0] := boolP (x == 0).
-  apply/cvg_ex; exists 1; apply/cvg_distP => _/posnumP[e].
+  apply/cvg_ex.
+  exists 1.
+  have ? : ProperFilter [set P | [filter of \oo] (series (exp_ 0) @^-1` P)].
+    (*typeclasses eauto.*)
+    admit.
+  apply/cvg_distP => // => _/posnumP[e].
   rewrite near_map; near=> n.
   have [m ->] : exists m, n = m.+1 by exists n.-1; rewrite prednK //; near: n; exists 1%nat.
   by rewrite series_exp_0 subrr normr0.
 apply: normed_cvg; rewrite normed_series_exp.
 by apply: is_cvg_series_exp_pos; rewrite normr_gt0.
-Grab Existential Variables. all: end_near. Qed.
+Grab Existential Variables. all: end_near. Admitted.
 
 Lemma cvg_exp_ (x : R) : exp_ x --> (0 : R^o).
 Proof. exact: (cvg_series_cvg_0 (@exp_cvg_series x)). Qed.
@@ -504,6 +509,8 @@ Qed.
 Lemma cvg_seq_Q (xa : (forall q : rat, x != ratr q * a)) :
   (fun n : nat => ratr (seq_Q a x m n) * a : R^o) --> (x:R^o).
 Proof.
+have ? : ProperFilter [set P | [filter of \oo] ((fun n : nat => ratr (seq_Q a x m n) * a) @^-1` P)].
+  admit.
 apply/(@cvg_distP _ [normedModType R of R^o]) => e e0.
 rewrite near_map; near=> n.
 move: (seq_Q_ub xma max xa n) => H1.
@@ -524,7 +531,7 @@ have K : (fun n : nat => ratr (1%:~R / (2 ^ n)%:~R) : R^o) --> (0 : R^o).
   by apply: cvg_geometric; rewrite gtr0_norm // exprN1 invr_lt1 ?ltr1n // unitfE.
 have ea0 : 0 < e / a by rewrite divr_gt0.
 by move/cvg_distP : K => /(_ _ ea0) /=; rewrite near_map.
-Grab Existential Variables. all: end_near. Qed.
+Grab Existential Variables. all: end_near. Admitted.
 
 Lemma start_x : (forall q : rat, x != ratr q * a) ->
   {m : int | m%:~R * a < x < (m + 1)%:~R * a}.
@@ -557,8 +564,10 @@ have [m /andP[max xma]] := start_x a0 xa.
 set x0 := m%:~R * a; set x_ := seq_Q a x m; exists (seq_Q a x m).
 split; first exact: nondecreasing_seq_Q.
 split; first by apply: is_cvg_seq_Q => //; rewrite addrC in xma => //; exact/ltW.
-apply/(@cvg_lim [topologicalType of R^o])/cvg_seq_Q => //; exact/ltW.
-Qed.
+apply/(@cvg_lim [topologicalType of R^o])/cvg_seq_Q => //.
+admit.
+exact/ltW.
+Admitted.
 
 End R_dense.
 

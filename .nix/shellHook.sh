@@ -46,7 +46,7 @@ updateNixPkgsCustom (){
          url = $URL;
          sha256 = \"$SHA256\";
        }" > .nix/nixpkgs.nix
-  else echo "error: usage: updateNixPkgsCustom <github username> [branch]"; exit 1
+  else echo "error: usage: updateNixPkgsCustom <github username> [branch]"
   fi
 }
 
@@ -59,14 +59,14 @@ printNixOverrides (){
 initNixConfig (){
   F=./.nix/config.nix;
   if [[ -f $F ]]
-    then echo "$F already exists"; exit 1
+    then echo "$F already exists"
     else if [[ -n "$1" ]]
       then echo "{" > $F
            echo "  pname = \"$1\";" >> $F
            echo "  overrides = {};" >> $F
            echo "}" >> $F
            chmod u+w $F
-      else echo "usage: initNixConfig pname"; exit 2
+      else echo "usage: initNixConfig pname"
     fi
   fi
 }
@@ -74,9 +74,10 @@ initNixConfig (){
 fetchCoqOverlay (){
   F=$nixpkgs/pkgs/development/coq-modules/$1/default.nix
   D=./.nix/coq-overlays/$1/
-  echo $F
-  if [[ -n "$1" ]]
-    then mkdir -p $D; cp $F $D; chmod u+w ${D}default.nix
-    else echo "usage: fetchCoqOverlay pname"; exit 1
+  if [[ -f "$F" ]]
+    then mkdir -p $D; cp $F $D; chmod u+w ${D}default.nix;
+         git add ${D}default.nix
+         echo "You may now amend ${D}default.nix"
+    else echo "usage: fetchCoqOverlay pname"
   fi
 }

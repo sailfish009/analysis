@@ -2854,6 +2854,25 @@ Grab Existential Variables. all: end_near. Qed.
 
 Section Closed_Ball.
 
+(* balls in topology.v are not necessarily open, here they are *)
+Lemma ball_open (R : numDomainType) (V : normedModType R) (x : V)
+      (r : R) : 0 <r -> open (ball x r).
+Proof.
+move=> r0; rewrite openE /= => y; rewrite -ball_normE /= => Bxy. 
+rewrite /interior nbhsE /=. 
+pose r':= minr `|x -y| (r - `|x-y|).
+exists (ball y r'); split; last first.
+move => z; rewrite -ball_normE /= => yzr'. admit.
+split; last first.
+  by apply: ballxx; admit.
+(* open_ball *)
+(* exists (ball y r')^°; split; last first. *)
+(* apply: subset_trans; first by apply: interior_subset. *)
+(* move => z; rewrite -ball_normE /= => yzr' .admit. *)
+(* split; first by apply: (open_interior (ball y r')). *)
+
+Admitted.
+
 Definition closed_ball_ (R : numDomainType) (V : zmodType) (norm : V -> R)
   (x : V) (e : R) := [set y | norm (x - y) <= e ].
 
@@ -2881,7 +2900,8 @@ move=> /posnumP[e]; rewrite eqEsubset; split => y.
   by move=> z; rewrite -ball_normE; exact: ltW.
 have [/eqP -> _|xy] := boolP (x == y); first exact: closed_ballxx.
 rewrite /closed_ball closureE -ball_normE.
-rewrite /closed_ball_ /= le_eqVlt => /orP [/eqP xye B [Bc Be]|xye _ [_ /(_ _ xye)]//].
+rewrite /closed_ball_ /= le_eqVlt.
+move => /orP [/eqP xye B [Bc Be]|xye _ [_ /(_ _ xye)]//].
 apply: Bc => B0 /nbhs_ballP[s s0] B0y.
 have [es|se] := leP s e%:num; last first.
   exists x; split; first by apply: Be; rewrite ball_normE; apply: ballxx.
@@ -2928,18 +2948,15 @@ apply: nbhs_singleton; apply/nbhs_interior/nbhs_ballP.
 by exists r => //; exact: subset_closure.
 Qed.
 
-Lemma ball_open (R : realFieldType) (V : pseudoMetricType R) (x : V)
-      (r : R) : 0 <r -> open (ball x r).
-Proof.  Admitted.
 
-Lemma closed_ball_int (R : realFieldType) (V : normedModType R) (x : V)
-  (r : R) : 0 < r -> (closed_ball x r)^° = ball x r.
-Proof.
-Admitted.
+(* Lemma closed_ball_int (R : realFieldType) (V : normedModType R) (x : V) *)
+(*   (r : R) : 0 < r -> (closed_ball x r)^° = ball x r. *)
+(* Proof. *)
+(* Admitted. *)
 
-Lemma closed_neigh_ball' (R : realFieldType) (V : normedModType R) (x : V)
-      (r: R) : 0<r -> open_nbhs x (closed_ball x r)^°.
-Admitted.
+(* Lemma closed_neigh_ball' (R : realFieldType) (V : normedModType R) (x : V) *)
+(*       (r: R) : 0<r -> open_nbhs x (closed_ball x r)^°. *)
+(* Admitted. *)
 
 
 End Closed_Ball.

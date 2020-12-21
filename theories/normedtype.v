@@ -2856,16 +2856,12 @@ Section Closed_Ball.
 
 (* balls in topology.v are not necessarily open, here they are *)
 Lemma ball_open (R : numDomainType) (V : normedModType R) (x : V)
-      (r : R) : 0 <r -> open (ball x r).
+      (r : R) : 0 < r -> open (ball x r).
 Proof.
-move=> r0; rewrite openE /= => y; rewrite -ball_normE /= => Bxy. 
-rewrite /interior nbhsE /=. 
-pose r':= minr `|x -y| (r - `|x-y|).
-exists (ball y r'); split; last first.
-move => z; rewrite -ball_normE /= => yzr'. admit.
-split; last first.
-  by apply: ballxx; admit.
-(* open_ball *)
+rewrite openE -ball_normE /interior => r0 y Bxy; near=> z.
+rewrite /= (le_lt_trans (@ler_dist_add _ _ y _ _))// addrC -ltr_subr_addr.
+by near: z; apply: cvg_dist; rewrite // subr_gt0.
+Grab Existential Variables. all: end_near. Qed.
 (* exists (ball y r')^°; split; last first. *)
 (* apply: subset_trans; first by apply: interior_subset. *)
 (* move => z; rewrite -ball_normE /= => yzr' .admit. *)

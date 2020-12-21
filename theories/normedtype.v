@@ -2858,16 +2858,11 @@ Section Closed_Ball.
 Lemma ball_open (R : numDomainType) (V : normedModType R) (x : V)
       (r : R) : 0 < r -> open (ball x r).
 Proof.
-rewrite openE -ball_normE /interior => r0 y Bxy; near=> z.
+rewrite openE -ball_normE /interior => r0 y /= Bxy; near=> z.
 rewrite /= (le_lt_trans (@ler_dist_add _ _ y _ _))// addrC -ltr_subr_addr.
-by near: z; apply: cvg_dist; rewrite // subr_gt0.
-Grab Existential Variables. all: end_near. Qed.
-(* exists (ball y r')^°; split; last first. *)
-(* apply: subset_trans; first by apply: interior_subset. *)
-(* move => z; rewrite -ball_normE /= => yzr' .admit. *)
-(* split; first by apply: (open_interior (ball y r')). *)
-
-Admitted.
+by near: z; apply: cvg_dist; rewrite // subr_gt0. 
+Grab Existential Variables. all: end_near.
+Qed.
 
 Definition closed_ball_ (R : numDomainType) (V : zmodType) (norm : V -> R)
   (x : V) (e : R) := [set y | norm (x - y) <= e ].
@@ -2935,6 +2930,24 @@ exists (PosNum r20); apply: (subset_trans (sub_closed_ball _ _) xrB) => //=.
 by rewrite lter_pdivr_mulr // ltr_pmulr // ltr1n.
 Qed.
 
+Lemma ball_closed_ball (R : realFieldType) (V : normedModType R) (x : V)
+      (r : R) : 0 < r -> ball x r `<=` (closed_ball x r).
+Proof. move=> r0 ; rewrite /closed_ball; apply: subset_closure. Qed.
+
+Lemma closed_ball_int (R : realFieldType) (V : normedModType R) (x : V)
+  (r : R) : 0 < r -> (closed_ball x r)^° = ball x r.
+Proof.
+move=> r0; rewrite eqEsubset; split; last first.
+  rewrite -open_subsetE; last by apply: ball_open.
+  by apply: subset_closure.
+rewrite /closed_ball /closure /interior. Admitted.
+
+Lemma closed_neigh_ball' (R : realFieldType) (V : normedModType R) (x : V)
+      (r: R) : 0<r -> open_nbhs x (closed_ball x r)^°.
+Proof.
+move=> r0; split; first by exact: open_interior.
+by rewrite closed_ball_int //; exact: ballxx.
+Qed.
 
 Lemma closed_neigh_ball (R : realFieldType) (V : normedModType R) (x : V)
   (r : R) : 0 < r -> open_nbhs x (closed_ball x r)^°.
@@ -2943,16 +2956,6 @@ split; first exact: open_interior.
 apply: nbhs_singleton; apply/nbhs_interior/nbhs_ballP.
 by exists r => //; exact: subset_closure.
 Qed.
-
-
-(* Lemma closed_ball_int (R : realFieldType) (V : normedModType R) (x : V) *)
-(*   (r : R) : 0 < r -> (closed_ball x r)^° = ball x r. *)
-(* Proof. *)
-(* Admitted. *)
-
-(* Lemma closed_neigh_ball' (R : realFieldType) (V : normedModType R) (x : V) *)
-(*       (r: R) : 0<r -> open_nbhs x (closed_ball x r)^°. *)
-(* Admitted. *)
 
 
 End Closed_Ball.
